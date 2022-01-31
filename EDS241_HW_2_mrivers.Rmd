@@ -1,0 +1,111 @@
+---
+title: "EDS241: Assignment 2"
+author: "Marie Rivers"
+date: '`r format(Sys.time(), "%m/%d/%Y")`'
+output: 
+  pdf_document:
+    toc: false
+    number_sections: yes
+header-includes:
+  - \setlength{\parindent}{1em}
+  - \usepackage{float}
+--- 
+  
+``` {r setup, echo = FALSE, message = FALSE, warning = FALSE}
+
+# set default chunk options
+knitr::opts_chunk$set(fig.width = 4, fig.height = 3, 
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+
+# load packages
+packages=c("stargazer", "here", "tidyr", "dplyr","stringr", "janitor", 
+           "cowplot", "ggplot2", "tinytex", "datasets", "tibble", "readxl", "here")
+
+for (i in packages) {
+  if (require(i,character.only=TRUE)==FALSE) {
+    install.packages(i,repos='http://cran.us.r-project.org')
+  }
+  else {
+    require(i,character.only=TRUE)
+  }
+}
+
+#devtools::install_github('rstudio/rmarkdown')
+options(scipen=999) # not scientific notation
+```
+
+\noindent In this assignment, test whether the effects of air quality regulations are the same accorss locations with different racial mix. More specifically, test if the NOx Budget Program, a cap-and-trade market for nitrogen oxides (NOx) emissions from power plants leads to similar effects in counties that are predominantly white versus counties that are predominantly black.
+
+\noindent NBP = 1 if the county was regulated under the NOx Budget Program
+\noindent NBP = 0 if the county was NOT regulated under the NOx Budget Program
+
+\noindent PctBlack = the fraction of the county population that is black
+Dnox_masstons = the change in annual NOx emissions from all power plants in a county between 2000 and 2008 (in tons).
+Dnox_masstons values are negative for counties where emissions of NOx from power plants declined.
+
+# Read Data
+```{r}
+data <- read_excel(here("data", "NBP.xls"), sheet = "Sheet1")
+```
+
+# Question a:
+Make a histogram depicting the distribution of Dnox_masstons.
+```{r}
+Dnox_histogram <- ggplot(data = data, aes(x = Dnox_masstons)) +
+  geom_histogram(fill = "seagreen") +
+  labs(x = "Change in annual NOx emmisions (tons)")
+```
+
+<center>**Figure 1: Histogram of county level change in annual NOx emissions**</center>
+```{r, eval=TRUE, echo=FALSE}
+Dnox_histogram
+```
+
+# Question b:
+Create an indicator = 1 if the county has `PctBlack` above the sample median and 0 otherwise. This is variable D for the rest of the assignment. What is the average of `PctBlack` for counties above the median, ie counties for which D=1?
+```{r}
+PctBlack_median <- median(data$PctBlack)
+
+data <- data %>% 
+  mutate(D = if_else(PctBlack > PctBlack_median, true = 1, false = 0))
+```
+
+# Question c:
+Estimate a regression of Dnox_masstons on NBP. Interpret the estimated intercept and the coefficient of NBP.
+```{r}
+
+```
+
+xxx
+
+# Question d:
+Create an interaction between the variables NBP and D. Estimate a regression of Dnox_masstons on NBP, D, and this interaction. Interpret each estimated regression coefficient, including the intercept.
+```{r}
+
+```
+xxx
+
+# Question e:
+What is the predicted Dnox_masstons in a county that was not regulated under NBP and where `PctBlack` is above the sample median (ie. where D=1)? Report the 95% confidence interval for this prediction. Make sure to use "heteroskedasticity-robust" standard errors.
+```{r}
+
+```
+
+xxx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
