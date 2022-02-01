@@ -230,6 +230,7 @@ ci_upper_D <- Dnox_NBP_D_model_robust$conf.high[3]
 ci_upper_D
 ```
 
+
 ```{r}
 # xxx...this table doesn't have the robust se
 #Dnox_NBP_model_robust 
@@ -240,6 +241,15 @@ Dnox_NBP_D_model_lm %>%
   summary() %>% 
   xtable() %>% 
   kable()
+```
+```{r}
+stargazer(Dnox_NBP_D_model_lm , se = starprep(Dnox_NBP_D_model_lm),
+          type = "text", ci=FALSE, no.space = TRUE, # change type back to "latex"
+          header = FALSE, omit.stat = c("adj.rsq","ser", "f"),
+          covariate.labels = c("NBP"), dep.var.labels = c("Change in annual NOx emissions"),
+          dep.var.caption = c(""), notes = c("Robust standard errors in parentheses"),
+          title = "Change in annaul NOx emissions", table.placement = "H")
+# constant is hte intercept
 ```
 
 xxx...interpret each coef...see eds222 lab 5 and RegressionSpecification.pdf slides 4-5 
@@ -254,6 +264,12 @@ predicted_Dnox <- Dnox_NBP_D_intercept + (Dnox_NBP_D_slope_coef_NBP * NBP) + (Dn
 predicted_Dnox
 ```
 
+```{r}
+Pred <- data.frame(NBP=c(0), D=c(1))
+predict(Dnox_NBP_D_model_robust, newdata=Pred, se.fit=TRUE, interval='confidence')
+```
+
+if you use lm the value would be the same but the confidence interval would be smaller (you're under estimating the error in the model)
 xxx...do you apply confidence intervals to each term?
 
 xxx...units!
