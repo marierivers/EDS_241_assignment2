@@ -118,6 +118,21 @@ data <- data %>%
   mutate(D = if_else(PctBlack > PctBlack_median, true = 1, false = 0))
 ```
 
+```{r}
+data_PctBlack_D1 <- data %>% 
+  filter(D == 1)
+
+mean_PctBlack_D1 <- mean(data_PctBlack_D1$PctBlack)
+mean_PctBlack_D1
+
+data_PctBlack_D0 <- data %>% 
+  filter(D == 0)
+
+mean_PctBlack_D0 <- mean(data_PctBlack_D0$PctBlack)
+mean_PctBlack_D0
+```
+\noindent The average of `PctBlack` for counties with `PctBlack` above the sample median is `r round(mean_PctBlack_D1, 3)`. The average of `PctBlack` for counties with `PctBlack` below the sample median is `r round(mean_PctBlack_D0, 3)`.
+
 # Question c:
 Estimate a regression of Dnox_masstons on NBP. Interpret the estimated intercept and the coefficient of NBP.
 ```{r}
@@ -167,30 +182,86 @@ Dnox_NBP_model_lm %>%
   kable()
 ```
 
-
-quantify the difference in average NOx emission change across the two groups of counties 
-
-xxx
-
 # Question d:
 Create an interaction between the variables NBP and D. Estimate a regression of Dnox_masstons on NBP, D, and this interaction. Interpret each estimated regression coefficient, including the intercept.
 ```{r}
-
+Dnox_NBP_D_model_robust <- lm_robust(formula = Dnox_masstons ~ NBP + D + NBP:D, data = data)
 ```
-xxx
+
+```{r}
+Dnox_NBP_D_intercept <- Dnox_NBP_D_model_robust$coefficients[1]
+Dnox_NBP_D_intercept
+```
+
+```{r}
+Dnox_NBP_D_slope_coef_NBP <- Dnox_NBP_D_model_robust$coefficients[2]
+Dnox_NBP_D_slope_coef_NBP
+```
+
+```{r}
+Dnox_NBP_D_slope_coef_D <- Dnox_NBP_D_model_robust$coefficients[3]
+Dnox_NBP_D_slope_coef_D
+```
+
+```{r}
+Dnox_NBP_D_slope_coef_NBP_D <- Dnox_NBP_D_model_robust$coefficients[4]
+Dnox_NBP_D_slope_coef_NBP_D
+```
+
+```{r}
+Dnox_NBP_D_std_err_NBP <- Dnox_NBP_D_model_robust$std.error[2]
+Dnox_NBP_D_std_err_NBP
+
+Dnox_NBP_D_std_err_D <- Dnox_NBP_D_model_robust$std.error[3]
+Dnox_NBP_D_std_err_D
+```
+
+```{r}
+ci_lower_NBP <- Dnox_NBP_D_model_robust$conf.low[2]
+ci_lower_NBP
+
+ci_upper_NBP <- Dnox_NBP_D_model_robust$conf.high[2]
+ci_upper_NBP
+
+ci_lower_D <- Dnox_NBP_D_model_robust$conf.low[3]
+ci_lower_D
+
+ci_upper_D <- Dnox_NBP_D_model_robust$conf.high[3]
+ci_upper_D
+```
+
+```{r}
+# xxx...this table doesn't have the robust se
+#Dnox_NBP_model_robust 
+
+Dnox_NBP_D_model_lm <- lm(formula = Dnox_masstons ~ NBP + D + NBP:D, data = data)
+
+Dnox_NBP_D_model_lm %>% 
+  summary() %>% 
+  xtable() %>% 
+  kable()
+```
+
+xxx...interpret each coef...see eds222 lab 5 and RegressionSpecification.pdf slides 4-5 
 
 # Question e:
 What is the predicted Dnox_masstons in a county that was not regulated under NBP and where `PctBlack` is above the sample median (ie. where D=1)? Report the 95% confidence interval for this prediction. Make sure to use "heteroskedasticity-robust" standard errors.
 ```{r}
+NBP <- 0
+D <- 1
 
+predicted_Dnox <- Dnox_NBP_D_intercept + (Dnox_NBP_D_slope_coef_NBP * NBP) + (Dnox_NBP_D_slope_coef_D * D) + (Dnox_NBP_D_slope_coef_NBP_D * NBP * D)
+predicted_Dnox
 ```
 
-xxx
+xxx...do you apply confidence intervals to each term?
+
+xxx...units!
 
 
 
 
-
+xxx...look at RegressionSpecification.pdf
 
 
 
