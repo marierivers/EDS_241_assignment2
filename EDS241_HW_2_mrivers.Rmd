@@ -10,17 +10,17 @@ header-includes:
   - \setlength{\parindent}{1em}
   - \usepackage{float}
 --- 
-  
+ 
 ``` {r setup, echo = FALSE, message = FALSE, warning = FALSE}
 
 # set default chunk options
-knitr::opts_chunk$set(fig.width = 4, fig.height = 3, 
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, 
                       echo = TRUE, message = FALSE, warning = FALSE)
 
 
 # load packages
 packages=c("stargazer", "here", "tidyr", "dplyr","stringr", "janitor", 
-           "cowplot", "ggplot2", "tinytex", "datasets", "tibble", "readxl", "here")
+           "cowplot", "ggplot2", "tinytex", "datasets", "tibble", "readxl", "here", "estimatr", "car", "kableExtra", "xtable")
 
 for (i in packages) {
   if (require(i,character.only=TRUE)==FALSE) {
@@ -54,13 +54,60 @@ Make a histogram depicting the distribution of Dnox_masstons.
 ```{r}
 Dnox_histogram <- ggplot(data = data, aes(x = Dnox_masstons)) +
   geom_histogram(fill = "seagreen") +
-  labs(x = "Change in annual NOx emmisions (tons)")
+  labs(x = "Change in annual NOx emisions (tons)")
 ```
 
 <center>**Figure 1: Histogram of county level change in annual NOx emissions**</center>
 ```{r, eval=TRUE, echo=FALSE}
 Dnox_histogram
 ```
+
+
+```{r}
+Dnox_histogram2 <- ggplot(data = data, aes(x = Dnox_masstons)) +
+  geom_histogram(aes(fill = as.factor(NBP)), position = "dodge") +
+  labs(x = "Change in annual NOx emisions (tons)", fill = "NBP")
+```
+
+<center>**Figure 2: Histogram of county level change in annual NOx emissions color coded by NBP status**</center>
+```{r, eval=TRUE, echo=FALSE}
+Dnox_histogram2
+```
+
+```{r}
+boxplot <- ggplot(data = data, aes(x = as.factor(NBP), y = Dnox_masstons)) +
+  geom_boxplot() +
+  labs(x = "NBP", y = "Change in annual NOx emmisions (tons)")
+```
+
+<center>**Figure 3: A box plot to show another way of visualizing the county level change in annual NOx emissions based on NBP status**</center>
+```{r, eval=TRUE, echo=FALSE}
+boxplot
+```
+
+```{r}
+# xxx...just for the fun of it
+ggplot(data = data, aes(x = as.factor(NBP), y = Dnox_masstons)) + 
+  geom_jitter(aes(color = NBP), show.legend = FALSE) +
+  labs(x = "NBP", y = "Change in annual NOx emmisions (tons)")
+```
+
+```{r}
+# xxx
+data_NBP1 <- data %>% 
+  filter(NBP == 1)
+mean_Dnox_NBP1 <- mean(data_NBP1$Dnox_masstons)
+mean_Dnox_NBP1
+
+data_NBP0 <- data %>% 
+  filter(NBP == 0)
+mean_Dnox_NBP0 <- mean(data_NBP0$Dnox_masstons)
+mean_Dnox_NBP0
+
+est <- mean_Dnox_NBP1 - mean_Dnox_NBP0
+# For linear regression with one categorical variable that only has two values, the regression estimate is equivalent to computing the means for each group and differencing them.
+```
+
 
 # Question b:
 Create an indicator = 1 if the county has `PctBlack` above the sample median and 0 otherwise. This is variable D for the rest of the assignment. What is the average of `PctBlack` for counties above the median, ie counties for which D=1?
@@ -74,8 +121,54 @@ data <- data %>%
 # Question c:
 Estimate a regression of Dnox_masstons on NBP. Interpret the estimated intercept and the coefficient of NBP.
 ```{r}
-
+Dnox_NBP_model_robust <- lm_robust(formula = Dnox_masstons ~ NBP, data = data)
 ```
+
+```{r}
+# use lm to estimate coefficients
+Dnox_NBP_model_lm <- lm(formula = Dnox_masstons ~ NBP, data = data)
+
+# adjust standard errors using estimatr::starprep() instead of estimatr::lm_robust()
+se_robust_model <- starprep(Dnox_NBP_model_lm)
+```
+
+```{r, results = 'asis', echo = FALSE}
+stargazer(Dnox_NBP_model_lm, se = se_robust_model,
+          type = "latex", ci=FALSE, no.space = TRUE, 
+          header = FALSE, omit = c("Constant"), omit.stat = c("adj.rsq","ser", "f"),
+          covariate.labels = c("NBP"), dep.var.labels = c("Change in annual NOx emissions"),
+          dep.var.caption = c(""), notes = c("Robust standard errors in parentheses"),
+          title = "Change in annaul NOx emissions", table.placement = "H")
+```
+
+```{r}
+Dnox_NBP_intercept <- Dnox_NBP_model_robust$coefficients[1]
+Dnox_NBP_intercept
+```
+
+```{r}
+Dnox_NBP_slope_coef <- Dnox_NBP_model_robust$coefficients[2]
+Dnox_NBP_slope_coef
+```
+
+```{r}
+Dnox_NBP_std_err <- Dnox_NBP_model_robust$std.error[2]
+Dnox_NBP_std_err
+```
+
+\noindent Based on the estimated intercept, the predicted change in annual NOx emissions for a county that was NOT regulated under the NOx Budget Program (NBP = 0) is `r round(Dnox_NBP_intercept, 3)` tons. Based on the estimated slope coefficient, change in annual NOx emissions was, on average, `r round(Dnox_NBP_slope_coef, 3)` tons higher for counties that were regulated under the NOx Budget Program than counties that were not regulated. Since negative values of `Dnox_masstons` corresponds to a decline in NOx from power plants then the slope coefficient more clearly means that, on average, annual NOx emissions decreased by `r round(abs(Dnox_NBP_slope_coef), 3)` tons more for counties that were regulated under the NOx Budget Program than counties that were not regulated.
+
+```{r}
+# xxx...this table doesn't have the robust se
+#Dnox_NBP_model_robust 
+Dnox_NBP_model_lm %>% 
+  summary() %>% 
+  xtable() %>% 
+  kable()
+```
+
+
+quantify the difference in average NOx emission change across the two groups of counties 
 
 xxx
 
