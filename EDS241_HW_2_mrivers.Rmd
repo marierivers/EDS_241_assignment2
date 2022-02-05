@@ -14,7 +14,7 @@ header-includes:
 ``` {r setup, echo = FALSE, message = FALSE, warning = FALSE}
 
 # set default chunk options
-knitr::opts_chunk$set(fig.width = 6, fig.height = 4, 
+knitr::opts_chunk$set(fig.width = 5, fig.height = 3, 
                       echo = TRUE, message = FALSE, warning = FALSE)
 
 
@@ -35,14 +35,13 @@ for (i in packages) {
 options(scipen=999) # not scientific notation
 ```
 
-\noindent In this assignment, test whether the effects of air quality regulations are the same accorss locations with different racial mix. More specifically, test if the NOx Budget Program, a cap-and-trade market for nitrogen oxides (NOx) emissions from power plants leads to similar effects in counties that are predominantly white versus counties that are predominantly black.
+\noindent In this assignment, test whether the effects of air quality regulations are the same accorss locations with different racial mix. More specifically, test if the NOx Budget Program, a cap-and-trade market for nitrogen oxides (NOx) emissions from power plants, leads to similar effects in counties that are predominantly white versus counties that are predominantly black. The NBP market was in effect in 212 of the 485 counties in the sample from 2003 to 2008.
 
 \noindent NBP = 1 if the county was regulated under the NOx Budget Program
 \noindent NBP = 0 if the county was NOT regulated under the NOx Budget Program
 
 \noindent PctBlack = the fraction of the county population that is black
-Dnox_masstons = the change in annual NOx emissions from all power plants in a county between 2000 and 2008 (in tons).
-Dnox_masstons values are negative for counties where emissions of NOx from power plants declined.
+Dnox_masstons = the change in annual NOx emissions from all power plants in a county between 2000 and 2008 (in tons). Dnox_masstons values are negative for counties where emissions of NOx from power plants declined.
 
 # Read Data
 ```{r}
@@ -61,7 +60,6 @@ Dnox_histogram <- ggplot(data = data, aes(x = Dnox_masstons)) +
 ```{r, eval=TRUE, echo=FALSE}
 Dnox_histogram
 ```
-
 
 ```{r}
 Dnox_histogram2 <- ggplot(data = data, aes(x = Dnox_masstons)) +
@@ -85,30 +83,6 @@ boxplot <- ggplot(data = data, aes(x = as.factor(NBP), y = Dnox_masstons)) +
 boxplot
 ```
 
-```{r}
-# xxx...just for the fun of it
-ggplot(data = data, aes(x = as.factor(NBP), y = Dnox_masstons)) + 
-  geom_jitter(aes(color = NBP), show.legend = FALSE) +
-  labs(x = "NBP", y = "Change in annual NOx emmisions (tons)")
-```
-
-```{r}
-# xxx
-data_NBP1 <- data %>% 
-  filter(NBP == 1)
-mean_Dnox_NBP1 <- mean(data_NBP1$Dnox_masstons)
-mean_Dnox_NBP1
-
-data_NBP0 <- data %>% 
-  filter(NBP == 0)
-mean_Dnox_NBP0 <- mean(data_NBP0$Dnox_masstons)
-mean_Dnox_NBP0
-
-est <- mean_Dnox_NBP1 - mean_Dnox_NBP0
-# For linear regression with one categorical variable that only has two values, the regression estimate is equivalent to computing the means for each group and differencing them.
-```
-
-
 # Question b:
 Create an indicator = 1 if the county has `PctBlack` above the sample median and 0 otherwise. This is variable D for the rest of the assignment. What is the average of `PctBlack` for counties above the median, ie counties for which D=1?
 ```{r}
@@ -119,22 +93,27 @@ data <- data %>%
 ```
 
 ```{r}
-data_PctBlack_D1 <- data %>% 
-  filter(D == 1)
+mean_PctBlack_D1 <- data %>% 
+  filter(D == 1) %>% 
+  summarise(mean(PctBlack)) %>% 
+  as.numeric()
 
-mean_PctBlack_D1 <- mean(data_PctBlack_D1$PctBlack)
-mean_PctBlack_D1
-
-data_PctBlack_D0 <- data %>% 
-  filter(D == 0)
-
-mean_PctBlack_D0 <- mean(data_PctBlack_D0$PctBlack)
-mean_PctBlack_D0
+mean_PctBlack_D0  <- data %>% 
+  filter(D == 0) %>% 
+  summarise(mean(PctBlack)) %>% 
+  as.numeric()
 ```
-\noindent The average of `PctBlack` for counties with `PctBlack` above the sample median is `r round(mean_PctBlack_D1, 3)`. The average of `PctBlack` for counties with `PctBlack` below the sample median is `r round(mean_PctBlack_D0, 3)`.
+
+\noindent The average of `PctBlack` for counties with `PctBlack` above the sample median is `r round(mean_PctBlack_D1, 3)`%. The average of `PctBlack` for counties with `PctBlack` below the sample median is `r round(mean_PctBlack_D0, 3)`%.
 
 # Question c:
 Estimate a regression of Dnox_masstons on NBP. Interpret the estimated intercept and the coefficient of NBP.
+```{r}
+ggplot(data = data, aes(x = as.factor(NBP), y = Dnox_masstons)) +
+  geom_point() +
+  labs(x = "NBP", y = "Change in annual NOx emmisions (tons)")
+```
+
 ```{r}
 Dnox_NBP_model_robust <- lm_robust(formula = Dnox_masstons ~ NBP, data = data)
 ```
@@ -149,11 +128,12 @@ se_robust_model <- starprep(Dnox_NBP_model_lm)
 
 ```{r, results = 'asis', echo = FALSE}
 stargazer(Dnox_NBP_model_lm, se = se_robust_model,
-          type = "latex", ci=FALSE, no.space = TRUE, 
-          header = FALSE, omit = c("Constant"), omit.stat = c("adj.rsq","ser", "f"),
+          type = "latex", ci=FALSE, no.space = TRUE, # change type to "text" to see in un-knitted files. use type = "latex" when knitting
+          header = FALSE, omit.stat = c("adj.rsq","ser", "f"),
           covariate.labels = c("NBP"), dep.var.labels = c("Change in annual NOx emissions"),
           dep.var.caption = c(""), notes = c("Robust standard errors in parentheses"),
           title = "Change in annaul NOx emissions", table.placement = "H")
+# constant is the intercept
 ```
 
 ```{r}
@@ -167,19 +147,32 @@ Dnox_NBP_slope_coef
 ```
 
 ```{r}
+Dnox_NBP_intercept_std_err <- Dnox_NBP_model_robust$std.error[1]
+Dnox_NBP_intercept_std_err
+```
+
+```{r}
 Dnox_NBP_std_err <- Dnox_NBP_model_robust$std.error[2]
 Dnox_NBP_std_err
 ```
 
-\noindent Based on the estimated intercept, the predicted change in annual NOx emissions for a county that was NOT regulated under the NOx Budget Program (NBP = 0) is `r round(Dnox_NBP_intercept, 3)` tons. Based on the estimated slope coefficient, change in annual NOx emissions was, on average, `r round(Dnox_NBP_slope_coef, 3)` tons higher for counties that were regulated under the NOx Budget Program than counties that were not regulated. Since negative values of `Dnox_masstons` corresponds to a decline in NOx from power plants then the slope coefficient more clearly means that, on average, annual NOx emissions decreased by `r round(abs(Dnox_NBP_slope_coef), 3)` tons more for counties that were regulated under the NOx Budget Program than counties that were not regulated.
+\noindent Based on the estimated intercept, the predicted change in annual NOx emissions for a county that was NOT regulated under the NOx Budget Program (NBP = 0) is `r round(Dnox_NBP_intercept, 3)` tons. Based on the estimated slope coefficient, change in annual NOx emissions was, on average, `r round(Dnox_NBP_slope_coef, 3)` tons higher for counties that were regulated under the NOx Budget Program than counties that were not regulated. Since negative values of `Dnox_masstons` correspond to a decline in NOx from power plants then the slope coefficient more clearly means that, on average, annual NOx emissions decreased by `r round(abs(Dnox_NBP_slope_coef), 3)` tons more for counties that were regulated under the NOx Budget Program than counties that were not regulated.
 
 ```{r}
-# xxx...this table doesn't have the robust se
-#Dnox_NBP_model_robust 
-Dnox_NBP_model_lm %>% 
-  summary() %>% 
-  xtable() %>% 
-  kable()
+# included as a check
+# For linear regression with one categorical variable that only has two values, the regression estimate is equivalent to computing the means for each group and differencing them.
+data_NBP1 <- data %>% 
+  filter(NBP == 1)
+mean_Dnox_NBP1 <- mean(data_NBP1$Dnox_masstons)
+mean_Dnox_NBP1
+
+data_NBP0 <- data %>% 
+  filter(NBP == 0)
+mean_Dnox_NBP0 <- mean(data_NBP0$Dnox_masstons)
+mean_Dnox_NBP0
+
+est <- mean_Dnox_NBP1 - mean_Dnox_NBP0
+est
 ```
 
 # Question d:
@@ -232,27 +225,39 @@ ci_upper_D
 
 
 ```{r}
-# xxx...this table doesn't have the robust se
-#Dnox_NBP_model_robust 
+# this model doesn't have robust standard errors
 
 Dnox_NBP_D_model_lm <- lm(formula = Dnox_masstons ~ NBP + D + NBP:D, data = data)
 
-Dnox_NBP_D_model_lm %>% 
-  summary() %>% 
-  xtable() %>% 
-  kable()
-```
-```{r}
-stargazer(Dnox_NBP_D_model_lm , se = starprep(Dnox_NBP_D_model_lm),
-          type = "text", ci=FALSE, no.space = TRUE, # change type back to "latex"
-          header = FALSE, omit.stat = c("adj.rsq","ser", "f"),
-          covariate.labels = c("NBP"), dep.var.labels = c("Change in annual NOx emissions"),
-          dep.var.caption = c(""), notes = c("Robust standard errors in parentheses"),
-          title = "Change in annaul NOx emissions", table.placement = "H")
-# constant is hte intercept
+se_robust_model2 <- starprep(Dnox_NBP_D_model_lm)
 ```
 
-xxx...interpret each coef...see eds222 lab 5 and RegressionSpecification.pdf slides 4-5 
+```{r}
+# constant is the intercept
+# not sure why type = "latex" didn't work
+stargazer(Dnox_NBP_D_model_lm, se = se_robust_model2,
+          type = "text", ci=FALSE, no.space = TRUE,
+          header = FALSE, omit.stat = c("adj.rsq","ser", "f"),
+          covariate.labels = c("NBP", "D", "NBP:D"), dep.var.labels = c("Change in annual NOx emissions"),
+          dep.var.caption = c(""), notes = c("Robust standard errors in parentheses"),
+          title = "Change in annaul NOx emissions based on NBP and PctBlack", table.placement = "H")
+```
+
+\noindent Base on the estimated intercept, the model predicts the average change in annual NOx emissions for a county without an NBP market (NBP = 0) and with a percent black population below the median (D = 0) to be `r round(Dnox_NBP_D_intercept, 3)` tons.
+
+\noindent Based on the coefficient on NBP, the average change in annual NOx emission changes by `r round(Dnox_NBP_D_slope_coef_NBP, 3)` tons when a county has an NBP market (NBP = 1) for counties with a percent black population below the median (D = 0). Since this coefficient is negative, the model predicts that annual NOx emissions due to the NBP market.
+
+\noindent Based on the coefficient on D, on average, the change in annual NOx emissions are `r abs(round(Dnox_NBP_D_slope_coef_D, 3))` tons lower for counties with above median black populations (D = 1) relative to counties with black populations below the median (D = 0) when there is no NBP market (NBP = 0).
+
+```{r}
+test <- data %>% 
+  filter(NBP == 0) %>% 
+  group_by(D) %>% 
+  summarise(mean_dnox = mean(Dnox_masstons))
+test
+```
+
+\noindent Based on the coefficient on the interaction term NBP:D, the impact of the NBP market on the change in annual NOX emissions is `r abs(round(Dnox_NBP_D_slope_coef_NBP_D, 3))` tons lower for counties with black populations above the median (D = 1) than it is in counties with percent black populations below the median (D = 0). This coefficient tells us how the relationship between change in annual NOx emissions varies with percentage black population. This coefficient tells us the slope fo the relationship between change in annual NOx emissions and NBP market for counties with D = 1 minus the same slope for counties with D = 0.
 
 # Question e:
 What is the predicted Dnox_masstons in a county that was not regulated under NBP and where `PctBlack` is above the sample median (ie. where D=1)? Report the 95% confidence interval for this prediction. Make sure to use "heteroskedasticity-robust" standard errors.
@@ -266,18 +271,23 @@ predicted_Dnox
 
 ```{r}
 Pred <- data.frame(NBP=c(0), D=c(1))
-predict(Dnox_NBP_D_model_robust, newdata=Pred, se.fit=TRUE, interval='confidence')
+fit <- predict(object = Dnox_NBP_D_model_robust, newdata = Pred, se.fit = TRUE, interval = 'confidence')
 ```
 
-if you use lm the value would be the same but the confidence interval would be smaller (you're under estimating the error in the model)
-xxx...do you apply confidence intervals to each term?
+```{r}
+fit_value <- fit$fit[1]
+fit_value
 
-xxx...units!
+conf_lower <- fit$fit[2]
+conf_lower
 
+conf_upper <- fit$fit[3]
+conf_upper
+```
 
+\noindent The predicted change in annual NOx emissions in a county that is not regulated by NBP (NBP = 0) and where the percent black population is able the sample median (D = 1) is `r round(predicted_Dnox, 3)`tons. Since this value is negative, emissions of NOx from power plants in this county declined. Using heteroskedasticity-robust standard errors, the confidence interval for this prediction is from `r round(conf_lower, 3)` tons to `r round(conf_upper, 3)` tons.
 
-
-xxx...look at RegressionSpecification.pdf
+\noindent Note: if you use lm, the predicted value would be the same but the confidence interval would be smaller because you're under estimating the error in the model.
 
 
 
